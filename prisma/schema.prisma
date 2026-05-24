@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String?
+  avatar       String?
+  phone        String?
+  vipLevel     Int      @default(0)
+  dailyUsage   Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  videos       Video[]
+  userWords    UserWord[]
+  studySessions StudySession[]
+}
+
+model Video {
+  id            String   @id @default(uuid())
+  userId        String
+  title         String
+  url           String?
+  filePath      String?
+  duration      Int      @default(0)
+  subtitleText  String?
+  language      String   @default("en")
+  createdAt     DateTime @default(now())
+
+  user          User     @relation(fields: [userId], references: [id])
+  vocabulary    Vocabulary[]
+}
+
+model Vocabulary {
+  id                String   @id @default(uuid())
+  videoId           String
+  word              String
+  definition        String?
+  phonetic          String?
+  difficulty        String   // A1, A2, B1, B2, C1, C2
+  frequency         Int      @default(0)
+  contextSentence   String?
+  timestampInVideo  Int      @default(0)
+  createdAt         DateTime @default(now())
+
+  video             Video    @relation(fields: [videoId], references: [id])
+  userWords         UserWord[]
+
+  @@index([word])
+  @@index([difficulty])
+}
+
+model UserWord {
+  id              String   @id @default(uuid())
+  userId          String
+  wordId          String
+  masteryLevel    Int      @default(0) // 0-5
+  lastReviewed    DateTime?
+  nextReview      DateTime?
+  timesReviewed   Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  user            User      @relation(fields: [userId], references: [id])
+  word            Vocabulary @relation(fields: [wordId], references: [id])
+
+  @@unique([userId, wordId])
+}
+
+model StudySession {
+  id          String   @id @default(uuid())
+  userId      String
+  type        String   // browse, quiz, speaking
+  wordsCount  Int      @default(0)
+  duration    Int      @default(0)
+  score       Float?
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id])
+}
